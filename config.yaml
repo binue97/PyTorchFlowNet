@@ -1,0 +1,26 @@
+settings:
+  worker_threads: 8
+  epochs: 300
+  start_epoch: 0
+  epoch_size: 1000
+  batch_size: 8
+  evaluation: true
+  pretrained_model_path: ""
+  result_path: "/packages/FlowNetPytorch/workspace/results"
+
+dataset:
+  type: flying_chairs
+  path:
+
+optimizer:
+  type: adam
+  alpha: 0.9
+  beta: 0.999
+  learning_rate: 0.0001
+  learning_rate_decay: 2
+  milestones: [100, 150, 200]
+
+loss:
+  weight_decay: 4e-4
+  bias_decay: 0
+  multiscale-weights: [0.005, 0.01, 0.02, 0.08, 0.32]
