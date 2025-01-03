@@ -1,13 +1,15 @@
-settings:
-  worker_threads: 8
-  epochs: 300
-  start_epoch: 0
-  epoch_size: 1000
-  batch_size: 8
-  evaluation: true
-  pretrained_model_path: ""
-  result_path: "/packages/FlowNetPytorch/workspace/results"
+evaluation: true
+pretrained_model_path: ""
+result_path: "./results"
 
+worker_threads: 8
+epochs: 300
+start_epoch: 0
+epoch_size: 1000
+batch_size: 8
+div_flow: 20
+
+# Currently, only 'flying_chairs' is supported.
 dataset:
   type: flying_chairs
   path:
