@@ -2,11 +2,13 @@ import os
 import glob
 import yaml
 
+import torch
 from torch.utils.data import DataLoader as TorchDataLoader
 from torchvision import transforms
 import numpy as np
 
 from tools import flow_transforms
+from .list_dataset import ListDataset
 
 '''
 Dataset structure
@@ -66,13 +68,10 @@ class FlyingChairsDataLoader:
                 flow_transforms.RandomHorizontalFlip(),
             ]
         )
-        self.training_set, self.test_set = self._make_dataset()
-        print(f'--- Training set size: {len(self.training_set)}')
-        print(f'--- Training set size: {len(self.test_set)}')
+        self.training_set_loader, self.test_set_loader = self._make_dataset()
 
 
     def _split_dataset(self, dataset, default_split_ratio=0.9):
-        split_indices = None
         if self.split_dataset and self.read_split_file:
             # Split dataset with given split file
             print('--- Split dataset with given split file')
@@ -109,34 +108,28 @@ class FlyingChairsDataLoader:
                 os.path.isfile(os.path.join(self.dataset_path, img2))
             ):
                 continue
-
             dataset.append([[img1, img2], flow_map])
-        return self._split_dataset(dataset)        
 
+        training_set_list, test_set_list = self._split_dataset(dataset)
+        print(f'--- Total dataset size: {len(training_set_list) + len(test_set_list)}')
+        print(f'--- Training set size: {len(training_set_list)}')
+        print(f'--- Training set size: {len(test_set_list)}')
+        training_set = ListDataset(self.dataset_path, training_set_list, self.input_transform, self.target_transform, self.co_transform)
+        test_set = ListDataset(self.dataset_path, test_set_list, self.input_transform, self.target_transform)
 
-    # def _get_dataset(self, dataset_class, transform, co_transform):
-    #     dataset = dataset_class(
-    #         self.dataset_path,
-    #         transform=transform,
-    #         co_transform=co_transform
-    #     )
-    #     return dataset
+        training_set_loader = torch.utils.data.DataLoader(
+            training_set,
+            batch_size=self.batch_size,
+            num_workers=self.worker_threads,
+            pin_memory=True,
+            shuffle=self.shuffle_training
+        )
+        test_set_loader = torch.utils.data.DataLoader(
+            test_set,
+            batch_size=self.batch_size,
+            num_workers=self.worker_threads,
+            pin_memory=True,
+            shuffle=self.shuffle_test
+        )
+        return training_set_loader, test_set_loader
 
-    # def _create_loader(self, dataset):
-    #     return TorchDataLoader(
-    #         dataset,
-    #         batch_size=self.batch_size,
-    #         shuffle=self.shuffle,
-    #         num_workers=self.num_workers,
-    #         pin_memory=True
-    #     )
-
-    # def get_train_loader(self):
-    #     dataset_class = datasets.__dict__[self.dataset_type]
-    #     train_dataset = self._get_dataset(dataset_class, transform=self.input_transform, co_transform=self.co_transform)
-    #     return self._create_loader(train_dataset)
-
-    # def get_val_loader(self):
-    #     dataset_class = datasets.__dict__[self.dataset_type]
-    #     val_dataset = self._get_dataset(dataset_class, transform=self.input_transform, co_transform=None)
-    #     return self._create_loader(val_dataset)
