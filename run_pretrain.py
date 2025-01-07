@@ -12,7 +12,7 @@ from custom_datasets import FlyingChairsDataLoader
 
 def main():
     print('')
-    print("[ Start training ]")
+    print("\n[ Configure ]")
     parser = argparse.ArgumentParser(description="Read a YAML config file.")
     parser.add_argument("-i", "--config", type=str, help="Path to the YAML configuration file.")
     args = parser.parse_args()
@@ -41,12 +41,12 @@ def main():
 
 
     # ========== Data Loader ==========
+    print("\n[ Data Loader ]")
     dataset_type = config['dataset']['type']
     data_loader = None
     if dataset_type == 'flying_chairs':
         data_loader = FlyingChairsDataLoader(config)
-    
-    print(data_loader is not None)
+  
 
 
 

@@ -14,7 +14,7 @@ shuffle_test_set: false
 # Currently, only 'flying_chairs' is supported.
 dataset:
   type: flying_chairs
-  path:
+  path: /hdd/data/optical_flow/freiburg/FlyingChairs/FlyingChairs_release/data
 
 optimizer:
   type: adam

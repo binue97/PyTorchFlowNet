@@ -27,7 +27,9 @@ Dataset structure
 '''
 class FlyingChairsDataLoader:
     def __init__(self, yaml_config):
+        print('--- Initializing FlyingChairsDataset')
         self.dataset_path = yaml_config['dataset']['path']
+        print(f'--- dataset path: {self.dataset_path}')
 
         self.worker_threads = yaml_config['worker_threads']
         self.batch_size = yaml_config['batch_size']
@@ -64,25 +66,29 @@ class FlyingChairsDataLoader:
                 flow_transforms.RandomHorizontalFlip(),
             ]
         )
+        self.training_set, self.test_set = self._make_dataset()
+        print(f'--- Training set size: {len(self.training_set)}')
+        print(f'--- Training set size: {len(self.test_set)}')
 
 
-    def _split_dataset(self, dataset, default_split=0.9):
+    def _split_dataset(self, dataset, default_split_ratio=0.9):
         split_indices = None
-        if self.split_dataset:
-            if self.split_with_given_file:
-                # Split dataset with given split file
-                with open(self.split_read_from_file) as f:
-                    split_indices = [x.strip() == "1" for x in f.readlines()]
-                assert len(dataset) == len(split_indices)
-            else:
-                # Split dataset with given split ratio
-                ratio = float(self.split_ratio)
-                split_indices = np.random.uniform(0, 1, len(dataset)) < ratio
+        if self.split_dataset and self.read_split_file:
+            # Split dataset with given split file
+            print('--- Split dataset with given split file')
+            with open(self.split_read_from_file) as f:
+                split_indices = [x.strip() == "1" for x in f.readlines()]
+            assert len(dataset) == len(split_indices)
         else:
-            split_indices = np.random.uniform(0, 1, len(dataset)) < default_split
+            print('--- Split dataset with split_ratio')
+            use_default_ratio = (self.split_ratio is None) or (self.split_dataset is False)
+            split_ratio = float(default_split_ratio if use_default_ratio else self.split_ratio)
+            print(f'--- Split ratio: {split_ratio}')
+            assert 0 < split_ratio < 1
+            split_indices = np.random.uniform(0, 1, len(dataset)) < split_ratio
 
-        if self.split_export_to_file is True:
-            with open(self.split_export_file_path, "w") as f:
+        if self.save_split_file is True:
+            with open(self.split_file_save_path, "w") as f:
                 f.write("\n".join(map(lambda x: str(int(x)), split_indices)))
 
         training_set = [data for data, is_training_data in zip(dataset, split_indices) if is_training_data]
@@ -99,13 +105,13 @@ class FlyingChairsDataLoader:
             img1 = filename + "_img1.ppm"
             img2 = filename + "_img2.ppm"
             if not (
-                os.path.isfile(os.path.join(dir, img1)) and
-                os.path.isfile(os.path.join(dir, img2))
+                os.path.isfile(os.path.join(self.dataset_path, img1)) and
+                os.path.isfile(os.path.join(self.dataset_path, img2))
             ):
                 continue
 
             dataset.append([[img1, img2], flow_map])
-        return self._split_dataset(dataset, default_split=0.97)        
+        return self._split_dataset(dataset)        
 
 
     # def _get_dataset(self, dataset_class, transform, co_transform):
