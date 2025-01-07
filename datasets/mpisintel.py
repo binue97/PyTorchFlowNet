@@ -2,7 +2,7 @@ import os.path
 import glob
 from .listdataset import ListDataset
 from .utils import split2list
-import flow_transforms
+from tools import flow_transforms
 
 """
 Dataset routines for MPI Sintel.

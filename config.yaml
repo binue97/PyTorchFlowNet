@@ -8,6 +8,8 @@ start_epoch: 0
 epoch_size: 1000
 batch_size: 8
 div_flow: 20
+shuffle_training_set: false
+shuffle_test_set: false
 
 # Currently, only 'flying_chairs' is supported.
 dataset:
@@ -26,3 +28,12 @@ loss:
   weight_decay: 4e-4
   bias_decay: 0
   multiscale-weights: [0.005, 0.01, 0.02, 0.08, 0.32]
+
+# ---------- Dataset options
+flying_chairs:
+  split_dataset: true
+  read_split_file: false
+  save_split_file: true
+  split_file_read_path: ./resources/flying_chairs_split.txt
+  split_file_save_path: ./results/flying_chairs_split.txt
+  split_ratio: 0.9
