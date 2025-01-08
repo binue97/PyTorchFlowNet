@@ -1,5 +1,6 @@
 pretrained_model_path: ""
 result_path: "./results"
+training_log_rate: 10
 
 model_arch: flownets
 worker_threads: 8
@@ -25,7 +26,7 @@ solver:
   milestones: [100, 150, 200]
   weight_decay: 4e-4
   bias_decay: 0
-  multiscale-weights: [0.005, 0.01, 0.02, 0.08, 0.32]
+  multiscale_weights: [0.005, 0.01, 0.02, 0.08, 0.32]
 
 # ---------- Dataset options
 flying_chairs:
@@ -33,5 +34,4 @@ flying_chairs:
   read_split_file: false
   save_split_file: true
   split_file_read_path: ./resources/flying_chairs_split.txt
-  split_file_save_path: ./results/flying_chairs_split.txt
   split_ratio: 0.9

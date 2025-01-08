@@ -31,20 +31,24 @@ class FlyingChairsDataLoader:
     def __init__(self, yaml_config):
         print('--- Initializing FlyingChairsDataset')
         self.dataset_path = yaml_config['dataset']['path']
-        print(f'--- dataset path: {self.dataset_path}')
-
         self.worker_threads = yaml_config['worker_threads']
         self.batch_size = yaml_config['batch_size']
         self.div_flow = yaml_config['div_flow']
         self.shuffle_training = yaml_config['shuffle_training_set']
         self.shuffle_test = yaml_config['shuffle_test_set']
-
         self.split_dataset = yaml_config['flying_chairs']['split_dataset']
         self.read_split_file = yaml_config['flying_chairs']['read_split_file']
         self.save_split_file = yaml_config['flying_chairs']['save_split_file']
         self.split_file_read_path = yaml_config['flying_chairs']['split_file_read_path']
-        self.split_file_save_path = yaml_config['flying_chairs']['split_file_save_path']
+        self.split_file_save_path = os.path.join(yaml_config['result_path'], "flying_chairs_split.txt")
         self.split_ratio = yaml_config['flying_chairs']['split_ratio']
+        print(f'--- dataset path: {self.dataset_path}\n')
+        print(f'--- split_dataset: {self.split_dataset}')
+        print(f'--- read_split_file: {self.read_split_file}')
+        print(f'--- save_split_file: {self.save_split_file}')
+        print(f'--- split_file_read_path: {self.split_file_read_path}')
+        print(f'--- split_file_save_path: {self.split_file_save_path}')
+        print(f'--- split_ratio: {self.split_ratio}')
 
         self.input_transform = transforms.Compose(
             [
@@ -75,7 +79,7 @@ class FlyingChairsDataLoader:
         if self.split_dataset and self.read_split_file:
             # Split dataset with given split file
             print('--- Split dataset with given split file')
-            with open(self.split_read_from_file) as f:
+            with open(self.split_file_read_path) as f:
                 split_indices = [x.strip() == "1" for x in f.readlines()]
             assert len(dataset) == len(split_indices)
         else:
