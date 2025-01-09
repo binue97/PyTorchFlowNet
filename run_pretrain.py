@@ -69,7 +69,9 @@ def main():
     alpha = float(config['solver']['alpha'])  # or momentum
     beta = float(config['solver']['beta'])
     learning_rate = float(config['solver']['learning_rate'])
-    learning_rate_decay = float(config['solver']['learning_rate_decay'])
+    decay_factor = float(config['solver']['weight_decay']['scale'])
+    weight_decay = float(config['solver']['weight_decay']['weight'])
+    bias_decay = float(config['solver']['weight_decay']['bias'])
     milestones = config['solver']['milestones']
 
     print("\n[ Model & Solver ]")
@@ -81,9 +83,9 @@ def main():
     
     assert solver_type in ['adam', 'sgd']
     print(f"--- Solver type: {solver_type}")
-    params_groups = [
-        {"params": model.bias_parameters(), "bias_decay": float(config['solver']['bias_decay'])},
-        {"params": model.weight_parameters(), "weight_decay": float(config['solver']['weight_decay'])}
+    param_groups = [
+        {"params": model.bias_parameters(), "weight_decay": bias_decay},
+        {"params": model.weight_parameters(), "weight_decay": weight_decay}
     ]
 
     if device.type == "cuda":
@@ -91,11 +93,11 @@ def main():
         # cudnn.benchmark = True
 
     if solver_type == "adam":
-        optimizer = torch.optim.Adam(params_groups, learning_rate, betas=(alpha, beta))
+        optimizer = torch.optim.Adam(param_groups, learning_rate, betas=(alpha, beta))
     elif solver_type == "sgd":
-        optimizer = torch.optim.SGD(params_groups, learning_rate, momentum=alpha)
+        optimizer = torch.optim.SGD(param_groups, learning_rate, momentum=alpha)
     
-    scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=milestones, gamma=learning_rate_decay)
+    scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=milestones, gamma=decay_factor)
 
 
     # ========== Train and Validate ==========
@@ -108,26 +110,27 @@ def main():
         train_writer.add_scalar("mean EPE", train_EPE, epoch)
 
         # Validate
-        with torch.no_grad():
-            EPE = validate(data_loader.test_set_loader, model, epoch)
-        test_writer.add_scalar("mean EPE", EPE, epoch)
+        # with torch.no_grad():
+        #     EPE = validate(data_loader.test_set_loader, model, epoch)
+        # test_writer.add_scalar("mean EPE", EPE, epoch)
 
-        if training_params.best_EPE < 0:
-            training_params.best_EPE = EPE
+        # if training_params.best_EPE < 0:
+        #     training_params.best_EPE = EPE
 
-        is_best = EPE < training_params.best_EPE
-        best_EPE = min(EPE, training_params.best_EPE)
-        utils.save_checkpoint(
-            {
-                "epoch": epoch + 1,
-                "arch": model_type,
-                "state_dict": model.module.state_dict(),
-                "best_EPE": best_EPE,
-                "div_flow": config['div_flow'],
-            },
-            is_best,
-            output_path,
-        )
+        # is_best = EPE < training_params.best_EPE
+        # best_EPE = min(EPE, training_params.best_EPE)
+        # utils.save_checkpoint(
+        #     {
+        #         "epoch": epoch + 1,
+        #         "arch": model_type,
+        #         "state_dict": model.module.state_dict(),
+        #         "best_EPE": best_EPE,
+        #         "div_flow": config['div_flow'],
+        #     },
+        #     is_best,
+        #     output_path,
+        # )
+    train_writer.close()
 
 
 def train(config, params, data_loader, model, optimizer, epoch, train_writer):
@@ -140,7 +143,7 @@ def train(config, params, data_loader, model, optimizer, epoch, train_writer):
     model.train()
     end = time.time()
 
-    for i, (input, target) in enumerate(data_loader):
+    for batch_idx, (input, target) in enumerate(data_loader):
         # measure data loading time
         data_time.update(time.time() - end)
         target = target.to(params.device)
@@ -165,14 +168,23 @@ def train(config, params, data_loader, model, optimizer, epoch, train_writer):
         batch_time.update(time.time() - end)
         end = time.time()
 
-        if i % config['training_log_rate'] == 0:
+
+        # ========== Log training infos ========== 
+        if batch_idx % config['training_log_rate'] == 0:
             print(
                 "Epoch: [{0}][{1}/{2}]\t Time {3}\t Data {4}\t Loss {5}\t EPE {6}".format(
-                    epoch, i, epoch_size, batch_time, data_time, losses, flow2_EPEs
+                    epoch, batch_idx, epoch_size, batch_time, data_time, losses, flow2_EPEs
                 )
             )
+        if (config['tensorboard']['learning_rate']['enable']):
+            if params.num_iter % config['tensorboard']['learning_rate']['log_rate']:
+                bias_learning_rate = optimizer.param_groups[0]['lr']
+                weight_learning_rate = optimizer.param_groups[1]['lr']
+                train_writer.add_scalar("bias_learning_rate", bias_learning_rate, params.num_iter)
+                train_writer.add_scalar("weight_learning_rate", weight_learning_rate, params.num_iter)
+        
         params.num_iter += 1
-        if i >= epoch_size:
+        if batch_idx >= epoch_size:
             break
     return losses.avg, flow2_EPEs.avg
 

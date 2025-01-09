@@ -12,6 +12,14 @@ div_flow: 20
 shuffle_training_set: false
 shuffle_validation_set: false
 
+tensorboard:
+  learning_rate:
+    enable: true
+    log_rate: 10
+  weight_and_bias:
+    enable: true
+    log_rate: 500
+
 # Currently, only 'flying_chairs' is supported.
 dataset:
   type: flying_chairs
@@ -22,10 +30,11 @@ solver:
   alpha: 0.9
   beta: 0.999
   learning_rate: 0.0001
-  learning_rate_decay: 0.5
+  weight_decay:
+    scale: 0.5
+    weight: 4e-4
+    bias: 0
   milestones: [100, 150, 200]
-  weight_decay: 4e-4
-  bias_decay: 0
   multiscale_weights: [0.005, 0.01, 0.02, 0.08, 0.32]
 
 # ---------- Dataset options
