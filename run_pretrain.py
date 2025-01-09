@@ -53,7 +53,7 @@ def main():
     config["result_path"] = output_path
     
     train_writer = SummaryWriter(os.path.join(output_path, "train"))
-    test_writer = SummaryWriter(os.path.join(output_path, "test"))
+    validation_writer = SummaryWriter(os.path.join(output_path, "validation"))
 
 
     # ========== Data Loader ==========

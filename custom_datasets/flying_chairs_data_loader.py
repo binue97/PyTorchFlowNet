@@ -35,7 +35,7 @@ class FlyingChairsDataLoader:
         self.batch_size = yaml_config['batch_size']
         self.div_flow = yaml_config['div_flow']
         self.shuffle_training = yaml_config['shuffle_training_set']
-        self.shuffle_test = yaml_config['shuffle_test_set']
+        self.shuffle_validation = yaml_config['shuffle_validation_set']
         self.split_dataset = yaml_config['flying_chairs']['split_dataset']
         self.read_split_file = yaml_config['flying_chairs']['read_split_file']
         self.save_split_file = yaml_config['flying_chairs']['save_split_file']
@@ -47,8 +47,7 @@ class FlyingChairsDataLoader:
         print(f'--- read_split_file: {self.read_split_file}')
         print(f'--- save_split_file: {self.save_split_file}')
         print(f'--- split_file_read_path: {self.split_file_read_path}')
-        print(f'--- split_file_save_path: {self.split_file_save_path}')
-        print(f'--- split_ratio: {self.split_ratio}')
+        print(f'--- split_file_save_path: {self.split_file_save_path}\n')
 
         self.input_transform = transforms.Compose(
             [
@@ -72,7 +71,7 @@ class FlyingChairsDataLoader:
                 flow_transforms.RandomHorizontalFlip(),
             ]
         )
-        self.training_set_loader, self.test_set_loader = self._make_dataset()
+        self.training_set_loader, self.validation_set_loader = self._make_dataset()
 
 
     def _split_dataset(self, dataset, default_split_ratio=0.9):
@@ -95,8 +94,8 @@ class FlyingChairsDataLoader:
                 f.write("\n".join(map(lambda x: str(int(x)), split_indices)))
 
         training_set = [data for data, is_training_data in zip(dataset, split_indices) if is_training_data]
-        test_set = [data for data, is_training_data in zip(dataset, split_indices) if not is_training_data]
-        return training_set, test_set
+        validation_set = [data for data, is_training_data in zip(dataset, split_indices) if not is_training_data]
+        return training_set, validation_set
     
 
     def _make_dataset(self):
@@ -114,12 +113,12 @@ class FlyingChairsDataLoader:
                 continue
             dataset.append([[img1, img2], flow_map])
 
-        training_set_list, test_set_list = self._split_dataset(dataset)
-        print(f'--- Total dataset size: {len(training_set_list) + len(test_set_list)}')
+        training_set_list, validation_set_list = self._split_dataset(dataset)
+        print(f'--- Total dataset size: {len(training_set_list) + len(validation_set_list)}')
         print(f'--- Training set size: {len(training_set_list)}')
-        print(f'--- Training set size: {len(test_set_list)}')
+        print(f'--- Training set size: {len(validation_set_list)}')
         training_set = ListDataset(self.dataset_path, training_set_list, self.input_transform, self.target_transform, self.co_transform)
-        test_set = ListDataset(self.dataset_path, test_set_list, self.input_transform, self.target_transform)
+        validation_set = ListDataset(self.dataset_path, validation_set_list, self.input_transform, self.target_transform)
 
         training_set_loader = torch.utils.data.DataLoader(
             training_set,
@@ -128,12 +127,12 @@ class FlyingChairsDataLoader:
             pin_memory=True,
             shuffle=self.shuffle_training
         )
-        test_set_loader = torch.utils.data.DataLoader(
-            test_set,
+        validation_set_loader = torch.utils.data.DataLoader(
+            validation_set,
             batch_size=self.batch_size,
             num_workers=self.worker_threads,
             pin_memory=True,
-            shuffle=self.shuffle_test
+            shuffle=self.shuffle_validation
         )
-        return training_set_loader, test_set_loader
+        return training_set_loader, validation_set_loader
 

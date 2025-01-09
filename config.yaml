@@ -10,7 +10,7 @@ epoch_size: 1000
 batch_size: 8
 div_flow: 20
 shuffle_training_set: false
-shuffle_test_set: false
+shuffle_validation_set: false
 
 # Currently, only 'flying_chairs' is supported.
 dataset:
