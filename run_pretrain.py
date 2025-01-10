@@ -9,8 +9,10 @@ import time
 from datetime import datetime
 
 import torch
+import torch.nn as nn
 import torch.backends.cudnn as cudnn
 from torch.utils.tensorboard import SummaryWriter
+import torchvision
 import torchvision.transforms as transforms
 
 import models
@@ -159,12 +161,10 @@ def train(config, params, data_loader, model, optimizer, epoch, train_writer):
         train_writer.add_scalar("train_loss", loss.item(), params.num_iter)
         flow2_EPEs.update(flow2_EPE.item(), target.size(0))
 
-        # compute gradient and do optimization step
+        # compute gradient and do optimize
         optimizer.zero_grad()
         loss.backward()
-        optimizer.step()
 
-        # measure elapsed time
         batch_time.update(time.time() - end)
         end = time.time()
 
@@ -176,13 +176,24 @@ def train(config, params, data_loader, model, optimizer, epoch, train_writer):
                     epoch, batch_idx, epoch_size, batch_time, data_time, losses, flow2_EPEs
                 )
             )
-        if (config['tensorboard']['learning_rate']['enable']):
-            if params.num_iter % config['tensorboard']['learning_rate']['log_rate']:
+        if config['tensorboard']['learning_rate']['enable'] is True:
+            if params.num_iter % config['tensorboard']['learning_rate']['log_rate'] == 0:
                 bias_learning_rate = optimizer.param_groups[0]['lr']
                 weight_learning_rate = optimizer.param_groups[1]['lr']
-                train_writer.add_scalar("bias_learning_rate", bias_learning_rate, params.num_iter)
-                train_writer.add_scalar("weight_learning_rate", weight_learning_rate, params.num_iter)
-        
+                train_writer.add_scalar("learning_rate/bias", bias_learning_rate, params.num_iter)
+                train_writer.add_scalar("learning_rate/weight", weight_learning_rate, params.num_iter)
+        if config['tensorboard']['weight_and_bias']['enable'] is True:
+            if params.num_iter % config['tensorboard']['weight_and_bias']['log_rate'] == 0:
+                for name, param in model.named_parameters():
+                    if param.requires_grad:
+                        train_writer.add_histogram(f"weight_and_bias/{name}", param, params.num_iter)
+        if config['tensorboard']['gradient']['enable'] is True:
+            if params.num_iter % config['tensorboard']['gradient']['log_rate'] == 0:
+                for name, param in model.named_parameters():
+                    if param.grad is not None:
+                        train_writer.add_histogram(f"gradients/{name}", param.grad, params.num_iter)
+
+        optimizer.step()
         params.num_iter += 1
         if batch_idx >= epoch_size:
             break
