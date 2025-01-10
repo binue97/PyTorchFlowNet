@@ -18,10 +18,10 @@ tensorboard:
     log_rate: 10
   weight_and_bias:
     enable: true
-    log_rate: 500
+    log_rate: 1000
   gradient:
     enable: true
-    log_rate: 500
+    log_rate: 1000
 
 # Currently, only 'flying_chairs' is supported.
 dataset:

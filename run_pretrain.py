@@ -112,26 +112,26 @@ def main():
         train_writer.add_scalar("mean EPE", train_EPE, epoch)
 
         # Validate
-        # with torch.no_grad():
-        #     EPE = validate(data_loader.test_set_loader, model, epoch)
-        # test_writer.add_scalar("mean EPE", EPE, epoch)
+        with torch.no_grad():
+            validation_EPE = validate(config, training_params, data_loader.validation_set_loader, model, validation_writer)
+        validation_writer.add_scalar("mean EPE", validation_EPE, epoch)
 
-        # if training_params.best_EPE < 0:
-        #     training_params.best_EPE = EPE
+        if training_params.best_EPE < 0:
+            training_params.best_EPE = validation_EPE
 
-        # is_best = EPE < training_params.best_EPE
-        # best_EPE = min(EPE, training_params.best_EPE)
-        # utils.save_checkpoint(
-        #     {
-        #         "epoch": epoch + 1,
-        #         "arch": model_type,
-        #         "state_dict": model.module.state_dict(),
-        #         "best_EPE": best_EPE,
-        #         "div_flow": config['div_flow'],
-        #     },
-        #     is_best,
-        #     output_path,
-        # )
+        is_best = validation_EPE < training_params.best_EPE
+        best_EPE = min(validation_EPE, training_params.best_EPE)
+        utils.save_checkpoint(
+            {
+                "epoch": epoch + 1,
+                "arch": model_type,
+                "state_dict": model.module.state_dict(),
+                "best_EPE": best_EPE,
+                "div_flow": config['div_flow'],
+            },
+            is_best,
+            output_path,
+        )
     train_writer.close()
 
 
@@ -168,14 +168,10 @@ def train(config, params, data_loader, model, optimizer, epoch, train_writer):
         batch_time.update(time.time() - end)
         end = time.time()
 
-
         # ========== Log training infos ========== 
         if batch_idx % config['training_log_rate'] == 0:
-            print(
-                "Epoch: [{0}][{1}/{2}]\t Time {3}\t Data {4}\t Loss {5}\t EPE {6}".format(
-                    epoch, batch_idx, epoch_size, batch_time, data_time, losses, flow2_EPEs
-                )
-            )
+            print("Epoch: [{0}][{1}/{2}]\t Time {3}\t Data {4}\t Loss {5}\t EPE {6}".format(
+                    epoch, batch_idx, epoch_size, batch_time, data_time, losses, flow2_EPEs))
         if config['tensorboard']['learning_rate']['enable'] is True:
             if params.num_iter % config['tensorboard']['learning_rate']['log_rate'] == 0:
                 bias_learning_rate = optimizer.param_groups[0]['lr']
@@ -201,10 +197,32 @@ def train(config, params, data_loader, model, optimizer, epoch, train_writer):
 
     
 
-def validate(test_set_loader, model, epoch):
+def validate(config, params, data_loader, model, validation_writer):
     batch_time = utils.AverageMeter()
     flow2_EPEs = utils.AverageMeter()
-    return None
+
+    model.eval()
+
+    end = time.time()
+    for batch_idx, (input, target) in enumerate(data_loader):
+        target = target.to(params.device)
+        input = torch.cat(input, 1).to(params.device)
+
+        # compute output
+        output = model(input)
+        flow2_EPE = config['div_flow'] * loss_functions.realEPE(output, target, sparse=False)
+        flow2_EPEs.update(flow2_EPE.item(), target.size(0))
+
+        # measure elapsed time
+        batch_time.update(time.time() - end)
+        end = time.time()
+
+        if batch_idx % config['training_log_rate'] == 0:
+            print("Test: [{0}/{1}]\t Time {2}\t EPE {3}".format(
+                    batch_idx, len(data_loader), batch_time, flow2_EPEs))
+    print(" * EPE {:.3f}".format(flow2_EPEs.avg))
+    return flow2_EPEs.avg
+
 
 if __name__ == "__main__":
     main()
