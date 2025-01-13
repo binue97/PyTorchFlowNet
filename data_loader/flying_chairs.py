@@ -27,7 +27,7 @@ Dataset structure
     ├── name3_flow.flo
     └── ...
 '''
-class FlyingChairsDataLoader:
+class FlyingChairs:
     def __init__(self, yaml_config):
         print('--- Initializing FlyingChairsDataset')
         self.dataset_path = yaml_config['dataset']['path']
