@@ -113,7 +113,7 @@ def main():
 
         # Validate
         with torch.no_grad():
-            validation_EPE = validate(config, training_params, data_loader.validation_set_loader, model, validation_writer)
+            validation_EPE = validate(config, training_params, data_loader.validation_set_loader, model, epoch, validation_writer)
         validation_writer.add_scalar("mean EPE", validation_EPE, epoch)
 
         if training_params.best_EPE < 0:
@@ -197,7 +197,7 @@ def train(config, params, data_loader, model, optimizer, epoch, train_writer):
 
     
 
-def validate(config, params, data_loader, model, validation_writer):
+def validate(config, params, data_loader, model, epoch, validation_writer):
     batch_time = utils.AverageMeter()
     flow2_EPEs = utils.AverageMeter()
 
@@ -216,6 +216,19 @@ def validate(config, params, data_loader, model, validation_writer):
         # measure elapsed time
         batch_time.update(time.time() - end)
         end = time.time()
+
+
+        if config['tensorboard']['sample_output']['enable'] is True:
+            if batch_idx < config['tensorboard']['sample_output']['num_samples']:
+                mean_values = torch.tensor([0.45, 0.432, 0.411], dtype=input.dtype).view(3, 1, 1)
+                validation_writer.add_image(
+                    "GroundTruth/"+str(batch_idx), utils.flow2rgb(config['div_flow'] * target[0], max_value=10), 0)
+                validation_writer.add_image(
+                    "Inputs/"+str(batch_idx), (input[0, :3].cpu() + mean_values).clamp(0, 1), 0)
+                validation_writer.add_image(
+                    "Inputs/"+str(batch_idx), (input[0, 3:].cpu() + mean_values).clamp(0, 1), 1)
+                validation_writer.add_image(
+                    "FlowNet Result/"+str(batch_idx), utils.flow2rgb(config['div_flow'] * output[0], max_value=10), epoch)
 
         if batch_idx % config['training_log_rate'] == 0:
             print("Test: [{0}/{1}]\t Time {2}\t EPE {3}".format(
