@@ -1,8 +1,9 @@
-pretrained_model_path: ""
+checkpoint_path: ""
 result_path: "./results"
 training_log_rate: 10
 
 model_arch: flownets
+dataset_type: flying_things
 worker_threads: 8
 epochs: 300
 start_epoch: 0
@@ -26,11 +27,6 @@ tensorboard:
     enable: true
     num_samples: 3
 
-# Currently, only 'flying_chairs' is supported.
-dataset:
-  type: flying_chairs
-  path: /hdd/data/optical_flow/freiburg/FlyingChairs/FlyingChairs_release/data
-
 solver:
   type: adam
   alpha: 0.9
@@ -45,8 +41,12 @@ solver:
 
 # ---------- Dataset options
 flying_chairs:
+  path: /hdd/data/optical_flow/freiburg/FlyingChairs/FlyingChairs_release/data
   split_dataset: true
   read_split_file: false
   save_split_file: true
   split_file_read_path: ./resources/flying_chairs_split.txt
   split_ratio: 0.9
+
+flying_things:
+  path: /hdd/data/optical_flow/freiburg/FlyingThings3D

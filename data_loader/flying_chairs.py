@@ -29,8 +29,8 @@ Dataset structure
 '''
 class FlyingChairs:
     def __init__(self, yaml_config):
-        print('--- Initializing FlyingChairsDataset')
-        self.dataset_path = yaml_config['dataset']['path']
+        print('--- Initializing FlyingChairs Dataset')
+        self.dataset_path = yaml_config['flying_chairs']['path']
         self.worker_threads = yaml_config['worker_threads']
         self.batch_size = yaml_config['batch_size']
         self.div_flow = yaml_config['div_flow']

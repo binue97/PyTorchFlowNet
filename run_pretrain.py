@@ -60,9 +60,11 @@ def main():
 
     # ========== Data Loader ==========
     print("\n[ Data Loader ]")
-    dataset_type = config['dataset']['type']
+    dataset_type = config['dataset_type']
     if dataset_type == 'flying_chairs':
         data_loader = FlyingChairs(config)
+    elif dataset_type == 'flying_things':
+        data_loader = FlyingThings(config, dstype='frames_cleanpass')
   
 
     # ========== Create Model and Solver ==========
