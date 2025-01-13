@@ -18,7 +18,7 @@ import torchvision.transforms as transforms
 import models
 from tools import flow_transforms
 from tools import utils
-from custom_datasets import FlyingChairsDataLoader
+from data_loader import FlyingChairs, FlyingThings
 from tools import loss_functions
 
 
@@ -62,7 +62,7 @@ def main():
     print("\n[ Data Loader ]")
     dataset_type = config['dataset']['type']
     if dataset_type == 'flying_chairs':
-        data_loader = FlyingChairsDataLoader(config)
+        data_loader = FlyingChairs(config)
   
 
     # ========== Create Model and Solver ==========
